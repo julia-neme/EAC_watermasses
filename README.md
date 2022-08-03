@@ -23,3 +23,12 @@ And before working, always verify that you are on your own branch by running `gi
 `git push origin "your_name"`
 
 On the github repository you should now see that a branch has pushed changes, and create a request to merge with the main branch.
+
+## Sync your local branch to master
+
+```
+git checkout master
+git pull origin master
+git checkout "your_name"
+git merge origin/master
+```
