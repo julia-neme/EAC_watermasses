@@ -7,7 +7,7 @@
 # -----------------------------------
 # by Julia Neme (in2022_v06)
 ###############################################################################
-#JA
+
 import cmocean as cm
 import glob
 import matplotlib.gridspec as gs
