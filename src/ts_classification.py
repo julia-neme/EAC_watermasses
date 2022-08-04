@@ -1,40 +1,18 @@
-import cmocean as cm
 import glob
 import gsw
 import matplotlib.gridspec as gs
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import pandas as pd
-import sys
 import xarray as xr
 from matplotlib.lines import Line2D
 plt.rcParams['font.size'] = 14
 
-tags = pd.read_csv('../FIGURES/EAC_class/CTD_profile_classification_EAC.csv').to_xarray()
-clr = np.zeros(len(tags['index']))
-clr = xr.where(tags['Class'] == 'EAC', 'orange', clr)
-clr = xr.where(tags['Class'] == 'SH', 'sienna', clr)
-clr = xr.where(tags['Class'] == 'CCE', 'royalblue', clr)
-clr = xr.where(tags['Class'] == 'WCE', 'orangered', clr)
+tags = xr.open_mfdataset(glob.glob('data/CTD_data/*.nc'), combine = 'nested')
+tags = tags.rename({'__xarray_dataarray_variable__': 'Class'})
+clr = dict({'EAC':'orange', 'WCE':'orangered', 'CCE':'b', 
+            'SHW':'sienna', 'NAN':'k'})
 
 def figure():
-    x = np.arange(34.2, 36.11, .01)
-    y = np.arange(0, 27.1, .1)
-    X, Y = np.meshgrid(x, y)
-    Z = gsw.density.sigma0(X, Y)
-
-    fig = plt.figure(figsize = (11, 10))
-    ax = fig.add_subplot()
-    c = ax.contour(X, Y, Z, levels = 20, colors = ['grey'], ls = '--', zorder = 0)
-    ax.clabel(c, fmt = '%0.1f')
-    ax.set_xlim(34.45, 36.1)
-    ax.set_ylim(0, 27)
-    ax.set_xlabel('Absolute salinity', fontsize = 14)
-    ax.set_ylabel('Conservative temp. ($^{\circ}$C)', fontsize = 14)
-    return fig, ax
-
-def figure_6():
     x = np.arange(34.2, 36.11, .01)
     y = np.arange(0, 27.1, .1)
     X, Y = np.meshgrid(x, y)
@@ -48,7 +26,7 @@ def figure_6():
            fig.add_subplot(grd[1,0]),
            fig.add_subplot(grd[1,1])]
     for ax in axs:
-        c = ax.contour(X, Y, Z, levels = 20, colors = ['grey'], ls = '--', zorder = 0)
+        c = ax.contour(X, Y, Z, levels = 20, colors = ['grey'], zorder = 0)
         ax.clabel(c, fmt = '%0.1f')
         ax.set_xlim(34.45, 36.1)
         ax.set_ylim(0, 27)
@@ -56,65 +34,58 @@ def figure_6():
         ax.set_ylabel('Conservative temp. ($^{\circ}$C)');
     return fig, axs
 
-path = []
-for v in ['in2022_v06', 'in2021_v03']:
-    path.append(glob.glob('../../../'+v+'/ctd/processing/'+v+ \
-                          '/cap/cappro/avg/*.nc'))
-for v in ['in2019_v05', 'in2018_v03', 'in2016_v06']:
-    path.append(glob.glob('../Past_Voyage_CTD/'+v+'/*/*.nc'))
+legend_elements = [Line2D([0], [0], color = clr[t], lw = 5, label = t)
+                   for t in ['WCE', 'CCE', 'EAC', 'SHW', 'NAN']]
 
-legend_elements = [Line2D([0], [0], color = 'royalblue', lw = 5, label = 'in2022_v06'),
-                   Line2D([0], [0], color = 'violet', lw = 5, label = 'in2021_v03'),
-                   Line2D([0], [0], color = 'forestgreen', lw = 5, label = 'in2019_v05'),
-                   Line2D([0], [0], color = 'navy', lw = 5, label = 'in2018_v03'),
-                   Line2D([0], [0], color = 'coral', lw = 5, label = 'in2016_v06')]
+fig, axs = figure()
+# Assign each axs to a different class
+ass_axs = dict({'EAC':0, 'WCE':1, 'CCE':2, 'SHW':3, 'NAN':4})
+n = dict({'EAC':0, 'WCE':0, 'CCE':0, 'SHW':0, 'NAN':0})
+for i in range(0, len(tags['profile']), 1):
+    data = xr.open_dataset('data/CTD_data/'+tags['profile'][i].item()[:10]+ \
+                             '/'+tags['profile'][i].item()+'.nc')
 
-fig, axs = figure_6()
-past = 0
-for i, clr in zip(range(0, len(path), 1), ['royalblue', 'violet', 'forestgreen', 'navy', 'coral']):
-    paths = path[i]
-    for j in np.arange(0, len(paths), 1):
-        data = xr.open_dataset(paths[j])
-        sa = gsw.SA_from_SP(data['salinity'], data['pressure'], data['longitude'], data['latitude'])
-        ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
-        for ax in axs[i:]:
-            if ax == axs[i]:
-                axs[i].scatter(sa, ct, color = clr, s = 8,
-                            edgecolor = 'none', zorder = 2);
-                past += 1
-            else:
-                ax.scatter(sa, ct, color = 'grey', s = 8,
-                           edgecolor = 'none', zorder = 2);
+    sa = gsw.SA_from_SP(data['salinity'], data['pressure'], 
+                        data['longitude'], data['latitude'])
+    ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
 
-fig.legend(handles = legend_elements, bbox_to_anchor = (.85, .3));
-plt.savefig('../FIGURES/EAC_class/ts_per_cruise.jpg', bbox_inches = 'tight')
-plt.show()
+    profile_class = tags.isel(profile=i)['Class'].values.item()
+
+    axs[ass_axs[profile_class]].scatter(sa, ct, color = clr[profile_class],
+                                        s = 8, zorder=2);
+    n[profile_class] = n[profile_class] + 1
+    for ax in axs:
+        if ax != axs[ass_axs[profile_class]]:
+            ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
+    
+for title in ['EAC', 'WCE', 'CCE', 'SHW', 'NAN']:
+    axs[ass_axs[title]].set_title('N profiles = '+str(n[title]))
+fig.legend(handles = legend_elements, bbox_to_anchor = (.83, .3));
+plt.savefig('results/ts_auto_classification.jpg', bbox_inches = 'tight')
 
 
-for t in ['EAC', 'CCE', 'WCE', 'SH']:
-    legend_color = clr.where(tags['Class'] == t).dropna('index')[0].item()
-    legend_elements = [Line2D([0], [0], color = legend_color, lw = 5, label = t)]
+fig, axs = figure()
+# Assign each axs to a different class
+ass_axs = dict({'EAC':0, 'WCE':1, 'CCE':2, 'SHW':3, 'NAN':4})
+n = dict({'EAC':0, 'WCE':0, 'CCE':0, 'SHW':0, 'NAN':0})
+for i in range(0, len(tags['profile']), 1):
+    data = xr.open_dataset('data/CTD_data/'+tags['profile'][i].item()[:10]+ \
+                             '/'+tags['profile'][i].item()+'.nc')
 
-    fig, ax = figure()
-    for i in range(0, len(tags['index']), 1):
-        year = str(tags['Year'][i].values)
-        voyage = str(tags['Voyage'][i].values)
-        cast = str(tags['CTD'][i].values)
-        if int(year) > 2019:
-            path = glob.glob('../../../in'+year+'_'+voyage+'/ctd/processing/in'+year+'_'+voyage+ \
-                '/cap/cappro/avg/*'+cast+'*.nc')
-        else:
-            path = glob.glob('../Past_Voyage_CTD/in'+year+'_'+voyage+'/*/*'+cast+'*.nc')    
-        data = xr.open_dataset(path[0])
+    sa = gsw.SA_from_SP(data['salinity'], data['pressure'], 
+                        data['longitude'].mean(), data['latitude'].mean())
+    ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
+    ox = data['oxygen']
+    profile_class = tags.isel(profile=i)['Class'].values.item()
 
-        sa = gsw.SA_from_SP(data['salinity'], data['pressure'], data['longitude'], data['latitude'])
-        ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
-        if tags['Class'][i] == t:
-            ax.scatter(sa, ct, color = clr[i].item(), s = 8,
-                    edgecolor = 'none', zorder = 2);
-        else:
-            ax.scatter(sa, ct, color = 'darkgrey', s = 8,
-                    edgecolor = 'none', zorder = 1);
-    fig.legend(handles = legend_elements, fontsize = 14, bbox_to_anchor = (1.05, .8));
-    plt.savefig('../FIGURES/EAC_class/ts_'+t+'_highlight.jpg', bbox_inches = 'tight')
-    plt.show()
+    c = axs[ass_axs[profile_class]].scatter(sa, ct, c = ox, cmap = 'gist_ncar',
+                                            vmin = 160, vmax = 210,
+                                            s = 8, zorder=2);
+    n[profile_class] = n[profile_class] + 1
+    for ax in axs:
+        if ax != axs[ass_axs[profile_class]]:
+            ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
+plt.colorbar(c, cax = fig.add_axes([0.68, 0.3, 0.2, 0.05]), orientation = 'horizontal').set_label('oxy')
+for title in ['EAC', 'WCE', 'CCE', 'SHW', 'NAN']:
+    axs[ass_axs[title]].set_title(title+' - N profiles = '+str(n[title]))
+plt.savefig('results/ts_auto_classification_woxy.jpg', bbox_inches = 'tight')

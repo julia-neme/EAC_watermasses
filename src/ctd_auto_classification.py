@@ -10,7 +10,7 @@
 # Author: Julia Neme & Hannah Dawson (in2022_v06)                          #
 # Date:  3 AUgust 2022                                                     #
 ############################################################################
-#JA
+
 import cmocean as cm
 import glob
 import matplotlib.gridspec as gs
@@ -67,9 +67,9 @@ def classify_ctd(profile, ssh_r):
 
     # interpolate values to ctd profile location
     lon, lat = profile.longitude.mean().values, profile.latitude.mean().values
-    ssh_interp = ssh_r.GSLA.interp(LONGITUDE=lon, LATITUDE=lat)[0].values#[0].values
-    v_interp = ssh_r.VCUR.interp(LONGITUDE=lon, LATITUDE=lat)[0].values#[0].values
-    bathy_interp = -bathy.height.interp(lon=lon, lat=lat).values#[0][0].values
+    ssh_interp = ssh_r.GSLA.interp(LONGITUDE=lon, LATITUDE=lat)[0].values
+    v_interp = ssh_r.VCUR.interp(LONGITUDE=lon, LATITUDE=lat)[0].values
+    bathy_interp = -bathy.height.interp(lon=lon, lat=lat).values
 
     # define ctd classification
     if ssh_interp <= -0.2:
@@ -89,7 +89,6 @@ def classify_ctd(profile, ssh_r):
 year = sys.argv[1] 
 # Get YY-MM-DD of profile
 voyage = sys.argv[2]
-
 # Gets list of all ssh files in the catalog
 path_to_catalog_ssh = 'https://thredds.aodn.org.au/thredds/catalog/IMOS/OceanCurrent/GSLA/' \
                       '/NRT00/'+year+'/catalog.html'
@@ -135,7 +134,10 @@ for i in range(0, len(path_to_profiles), 1):
         ssh_r = ssh.sel(LONGITUDE = slice(151, 159), LATITUDE = slice(-33, -24))
 
         class_tags.append(classify_ctd(profile, ssh_r))
-        profile_tags.append(path_to_profiles[i][-22:-3])
+        if int(year) != 2015:
+            profile_tags.append(path_to_profiles[i][-22:-3])
+        else:
+            profile_tags.append(path_to_profiles[i][-19:-3])
 
         c = axs[0].pcolormesh(ssh_r['LONGITUDE'], ssh_r['LATITUDE'], ssh_r['GSLA'].squeeze(),
                             cmap = cm.cm.delta)
@@ -160,14 +162,16 @@ for i in range(0, len(path_to_profiles), 1):
     axs[4].plot(profile['oxygen'].squeeze(), profile['pressure'].squeeze(), color = 'k')
     axs[2].set_ylim(0, profile['pressure'][-1])
     axs[2].axes.invert_yaxis()
-    #fig.suptitle('Voyage: '+voyage+ ' Deployment N: '+profile.attrs['Deployment']+
-    #            '\n Date: '+date+' Lat: '+str(np.round(profile['latitude'].values[0], 2))+
-    #            ' Lon: '+str(np.round(profile['longitude'].values[0], 2)),
-    #            x = 0.4)
-    #plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-22:-9]+'.jpg',
-    #            bbox_inches = 'tight')
-    plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-19:-6]+'.jpg',
-                bbox_inches = 'tight')
+    if int(year) != 2015:
+        fig.suptitle('Voyage: '+voyage+ ' Deployment N: '+profile.attrs['Deployment']+
+                    '\n Date: '+date+' Lat: '+str(np.round(profile['latitude'].values[0], 2))+
+                    ' Lon: '+str(np.round(profile['longitude'].values[0], 2)),
+                    x = 0.4)
+        plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-22:-9]+'.jpg',
+                    bbox_inches = 'tight')
+    else:
+        plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-19:-6]+'.jpg',
+                    bbox_inches = 'tight')
     plt.close()
 
     print('\n'+path_to_profiles[i][-15:-9]+' done!')
