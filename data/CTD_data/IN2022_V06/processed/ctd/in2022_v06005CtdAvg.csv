@@ -1,0 +1,12 @@
+Survey: in2022_v06
+Deployment: 5
+Start time: 17-Jul-2022 05:43:11
+Bottom time: 17-Jul-2022 05:43:14
+End time: 17-Jul-2022 05:43:11
+Water depth: 4763.4248
+Pressure bin: 1
+Max scans: 240000000000
+
+DateTime,Pressure,"Primary Temperature","Primary Salinity","Secondary Temperature","Secondary Salinity","Primary SBE43 Oxygen","Secondary SBE43 Oxygen","PAR","Transmissometer","Fluorescence, WET Labs ECO-AFL/FL","Turbidity, WET Labs ECO BB","Wetlabs CDOM"
+2022-07-17 05:43:11,7.4,21.863,35.515,21.865,35.516,217.95,217.91,29.60,97.69,0.384874084,0.000185426,-0.094688893
+2022-07-17 05:43:13,7.7,21.864,35.515,21.864,35.516,218.24,218.35,30.50,97.68,0.400135292,0.000200594,-0.090964709
