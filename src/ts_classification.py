@@ -1,3 +1,4 @@
+import cmocean
 import glob
 import gsw
 import matplotlib.gridspec as gs
@@ -7,7 +8,7 @@ import xarray as xr
 from matplotlib.lines import Line2D
 plt.rcParams['font.size'] = 14
 
-tags = xr.open_mfdataset(glob.glob('data/CTD_data/*.nc')[:4], combine = 'nested')
+tags = xr.open_mfdataset(glob.glob('data/CTD_data/*.nc'), combine = 'nested')
 tags = tags.rename({'__xarray_dataarray_variable__': 'Class'})
 clr = dict({'EAC':'orange', 'WCE':'orangered', 'CCE':'b', 
             'SHW':'sienna', 'NAN':'k'})
@@ -42,26 +43,56 @@ fig, axs = figure()
 ass_axs = dict({'EAC':0, 'WCE':1, 'CCE':2, 'SHW':3, 'NAN':4})
 n = dict({'EAC':0, 'WCE':0, 'CCE':0, 'SHW':0, 'NAN':0})
 for i in range(0, len(tags['profile']), 1):
-    data = xr.open_dataset('data/CTD_data/'+tags['profile'][i].item()[:10]+ \
+    data = xr.open_dataset('data/CTD_data/'+tags['profile'][i].item()[:10].upper()+ \
                              '/'+tags['profile'][i].item()+'.nc')
+    if data['longitude'][0] > 152 and data['longitude'][0] < 158:
+        if data['latitude'][0] > -32 and data['latitude'][0] < -25:
 
-    sa = gsw.SA_from_SP(data['salinity'], data['pressure'], 
-                        data['longitude'], data['latitude'])
-    ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
+            sa = gsw.SA_from_SP(data['salinity'], data['pressure'], 
+                                data['longitude'], data['latitude'])
+            ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
 
-    profile_class = tags.isel(profile=i)['Class'].values.item()
+            profile_class = tags.isel(profile=i)['Class'].values.item()
 
-    axs[ass_axs[profile_class]].scatter(sa, ct, color = clr[profile_class],
-                                        s = 8, zorder=2);
-    n[profile_class] = n[profile_class] + 1
-    for ax in axs:
-        if ax != axs[ass_axs[profile_class]]:
-            ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
-    
+            axs[ass_axs[profile_class]].scatter(sa, ct, color = clr[profile_class],
+                                                s = 8, zorder=2);
+            n[profile_class] = n[profile_class] + 1
+            for ax in axs:
+                if ax != axs[ass_axs[profile_class]]:
+                    ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
+            
 for title in ['EAC', 'WCE', 'CCE', 'SHW', 'NAN']:
     axs[ass_axs[title]].set_title('N profiles = '+str(n[title]))
 fig.legend(handles = legend_elements, bbox_to_anchor = (.83, .3));
 plt.savefig('results/ts_auto_classification.jpg', bbox_inches = 'tight')
+
+fig, axs = figure()
+# Assign each axs to a different class
+ass_axs = dict({'EAC':0, 'WCE':1, 'CCE':2, 'SHW':3, 'NAN':4})
+n = dict({'EAC':0, 'WCE':0, 'CCE':0, 'SHW':0, 'NAN':0})
+for i in range(0, len(tags['profile']), 1):
+    data = xr.open_dataset('data/CTD_data/'+tags['profile'][i].item()[:10].upper()+ \
+                                '/'+tags['profile'][i].item()+'.nc')
+    if data['longitude'][0] > 152 and data['longitude'][0] < 158:
+        if data['latitude'][0] > -32 and data['latitude'][0] < -25:
+
+            sa = gsw.SA_from_SP(data['salinity'], data['pressure'], 
+                        data['longitude'].mean(), data['latitude'].mean())
+            ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
+            ox = data['oxygen']
+            profile_class = tags.isel(profile=i)['Class'].values.item()
+
+            c = axs[ass_axs[profile_class]].scatter(sa, ct, c = ox, cmap = cmocean.cm.solar,
+                                                    vmin = 160, vmax = 210,
+                                                    s = 8, zorder=2);
+            n[profile_class] = n[profile_class] + 1
+            for ax in axs:
+                if ax != axs[ass_axs[profile_class]]:
+                    ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
+plt.colorbar(c, cax = fig.add_axes([0.68, 0.3, 0.2, 0.05]), orientation = 'horizontal').set_label('oxy')
+for title in ['EAC', 'WCE', 'CCE', 'SHW', 'NAN']:
+    axs[ass_axs[title]].set_title(title+' - N profiles = '+str(n[title]))
+plt.savefig('results/ts_auto_classification_woxy.jpg', bbox_inches = 'tight')
 
 
 fig, axs = figure()
@@ -69,23 +100,28 @@ fig, axs = figure()
 ass_axs = dict({'EAC':0, 'WCE':1, 'CCE':2, 'SHW':3, 'NAN':4})
 n = dict({'EAC':0, 'WCE':0, 'CCE':0, 'SHW':0, 'NAN':0})
 for i in range(0, len(tags['profile']), 1):
-    data = xr.open_dataset('data/CTD_data/'+tags['profile'][i].item()[:10]+ \
-                             '/'+tags['profile'][i].item()+'.nc')
+    data = xr.open_dataset('data/CTD_data/'+tags['profile'][i].item()[:10].upper()+ \
+                                '/'+tags['profile'][i].item()+'.nc')
+    if data['longitude'][0] > 152 and data['longitude'][0] < 158:
+        if data['latitude'][0] > -32 and data['latitude'][0] < -25:
 
-    sa = gsw.SA_from_SP(data['salinity'], data['pressure'], 
+            sa = gsw.SA_from_SP(data['salinity'], data['pressure'], 
                         data['longitude'].mean(), data['latitude'].mean())
-    ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
-    ox = data['oxygen']
-    profile_class = tags.isel(profile=i)['Class'].values.item()
+            ct = gsw.CT_from_t(sa, data['temperature'], data['pressure'])
+            ox = data['oxygen']
+            profile_class = tags.isel(profile=i)['Class'].values.item()
 
-    c = axs[ass_axs[profile_class]].scatter(sa, ct, c = ox, cmap = 'gist_ncar',
-                                            vmin = 160, vmax = 210,
-                                            s = 8, zorder=2);
-    n[profile_class] = n[profile_class] + 1
-    for ax in axs:
-        if ax != axs[ass_axs[profile_class]]:
-            ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
+            c = axs[ass_axs[profile_class]].scatter(sa, ct, c = ox, cmap = cmocean.cm.solar,
+                                                    vmin = 160, vmax = 210,
+                                                    s = 8, zorder=2);
+            n[profile_class] = n[profile_class] + 1
+            for ax in axs:
+                if ax != axs[ass_axs[profile_class]]:
+                    ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
+for ax in axs:
+    ax.set_ylim(15, None)
+    ax.set_xlim(34.8, None)
 plt.colorbar(c, cax = fig.add_axes([0.68, 0.3, 0.2, 0.05]), orientation = 'horizontal').set_label('oxy')
 for title in ['EAC', 'WCE', 'CCE', 'SHW', 'NAN']:
     axs[ass_axs[title]].set_title(title+' - N profiles = '+str(n[title]))
-plt.savefig('results/ts_auto_classification_woxy.jpg', bbox_inches = 'tight')
+plt.savefig('results/ts_auto_classification_woxy_surface.jpg', bbox_inches = 'tight')
