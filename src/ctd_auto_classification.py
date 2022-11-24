@@ -134,10 +134,10 @@ for i in range(0, len(path_to_profiles), 1):
         ssh_r = ssh.sel(LONGITUDE = slice(151, 159), LATITUDE = slice(-33, -24))
 
         class_tags.append(classify_ctd(profile, ssh_r))
-        if int(year) != 2015:
-            profile_tags.append(path_to_profiles[i][-22:-3])
-        else:
+        if int(year) in [2012,2013,2015]:
             profile_tags.append(path_to_profiles[i][-19:-3])
+        else:
+            profile_tags.append(path_to_profiles[i][-22:-3])
 
         c = axs[0].pcolormesh(ssh_r['LONGITUDE'], ssh_r['LATITUDE'], ssh_r['GSLA'].squeeze(),
                             cmap = cm.cm.delta)
@@ -156,22 +156,26 @@ for i in range(0, len(path_to_profiles), 1):
         print('No SSH field for this day')
     for ax in axs[:-3]:
         ax.scatter(profile['longitude'].values[0], profile['latitude'].values[0],
-                c = tag_colors[class_tags[i]], s = 60)
-    axs[2].plot(profile['temperature'].squeeze(), profile['pressure'].squeeze())
-    axs[3].plot(profile['salinity'].squeeze(), profile['pressure'].squeeze(), color = 'orangered')
-    axs[4].plot(profile['oxygen'].squeeze(), profile['pressure'].squeeze(), color = 'k')
-    axs[2].set_ylim(0, profile['pressure'][-1])
-    axs[2].axes.invert_yaxis()
-    if int(year) != 2015:
-        fig.suptitle('Voyage: '+voyage+ ' Deployment N: '+profile.attrs['Deployment']+
-                    '\n Date: '+date+' Lat: '+str(np.round(profile['latitude'].values[0], 2))+
-                    ' Lon: '+str(np.round(profile['longitude'].values[0], 2)),
-                    x = 0.4)
-        plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-22:-9]+'.jpg',
-                    bbox_inches = 'tight')
-    else:
+                c = tag_colors[class_tags[i]], s = 60);
+    axs[2].plot(profile['temperature'].squeeze(), profile['pressure'].squeeze());
+    axs[3].plot(profile['salinity'].squeeze(), profile['pressure'].squeeze(), color = 'orangered');
+    axs[4].plot(profile['oxygen'].squeeze(), profile['pressure'].squeeze(), color = 'k');
+    axs[2].set_ylim(0, profile['pressure'][-1]);
+    axs[2].axes.invert_yaxis();
+    if int(year) == 2015:
+        #fig.suptitle('Voyage: '+voyage+ ' Deployment N: '+profile.attrs['Deployment']+
+        #            '\n Date: '+date+' Lat: '+str(np.round(profile['latitude'].values[0], 2))+
+        #            ' Lon: '+str(np.round(profile['longitude'].values[0], 2)),
+        #            x = 0.4);
         plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-19:-6]+'.jpg',
                     bbox_inches = 'tight')
+    elif int(year) in [2012, 2013]:
+        plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-19:-6]+'.jpg',
+                    bbox_inches = 'tight')
+    else:
+        plt.savefig('results/figures/EAC_class/'+path_to_profiles[i][-22:-9]+'.jpg',
+                    bbox_inches = 'tight')
+        
     plt.close()
 
     print('\n'+path_to_profiles[i][-15:-9]+' done!')
