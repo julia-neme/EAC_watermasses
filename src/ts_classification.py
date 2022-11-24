@@ -7,7 +7,7 @@ import xarray as xr
 from matplotlib.lines import Line2D
 plt.rcParams['font.size'] = 14
 
-tags = xr.open_mfdataset(glob.glob('data/CTD_data/*.nc')[3], combine = 'nested')
+tags = xr.open_mfdataset(glob.glob('data/CTD_data/*.nc')[:4], combine = 'nested')
 tags = tags.rename({'__xarray_dataarray_variable__': 'Class'})
 clr = dict({'EAC':'orange', 'WCE':'orangered', 'CCE':'b', 
             'SHW':'sienna', 'NAN':'k'})
