@@ -62,10 +62,11 @@ for i in range(0, len(tags['profile']), 1):
                     ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
             
 for title in ['EAC', 'WCE', 'CCE', 'SHW', 'NAN']:
-    axs[ass_axs[title]].set_title('N profiles = '+str(n[title]))
+    axs[ass_axs[title]].set_title('N profiles = '+str(n[title]));
 fig.legend(handles = legend_elements, bbox_to_anchor = (.83, .3));
 plt.savefig('results/ts_auto_classification.jpg', bbox_inches = 'tight')
 
+excluded = []
 fig, axs = figure()
 # Assign each axs to a different class
 ass_axs = dict({'EAC':0, 'WCE':1, 'CCE':2, 'SHW':3, 'NAN':4})
@@ -89,9 +90,13 @@ for i in range(0, len(tags['profile']), 1):
             for ax in axs:
                 if ax != axs[ass_axs[profile_class]]:
                     ax.scatter(sa, ct, color = 'grey', s = 8, zorder=1);
-plt.colorbar(c, cax = fig.add_axes([0.68, 0.3, 0.2, 0.05]), orientation = 'horizontal').set_label('oxy')
+        else:
+            excluded.append(tags['profile'][i].values)
+    else:
+        excluded.append(tags['profile'][i].values)
+plt.colorbar(c, cax = fig.add_axes([0.68, 0.3, 0.2, 0.05]), orientation = 'horizontal').set_label('oxy');
 for title in ['EAC', 'WCE', 'CCE', 'SHW', 'NAN']:
-    axs[ass_axs[title]].set_title(title+' - N profiles = '+str(n[title]))
+    axs[ass_axs[title]].set_title(title+' - N profiles = '+str(n[title]));
 plt.savefig('results/ts_auto_classification_woxy.jpg', bbox_inches = 'tight')
 
 
